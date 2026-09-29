@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+
+# Tools caches
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Secrets (never commit)
+.env
+.env.*
+!.env.example
+
+# Data and models (managed by DVC later, not Git)
+data/*
+!data/.gitkeep
+models/*
+!models/.gitkeep
+*.pt
+*.pth
+*.onnx
+*.weights
+
+# Experiment outputs
+mlruns/
+runs/
+
+# Videos (large; keep out of Git)
+*.mp4
+*.avi
+*.mov
+*.mkv
+
+# Notebooks and editors
+.ipynb_checkpoints/
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
