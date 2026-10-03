@@ -1,119 +1,67 @@
-"""Entry/exit state machine with debouncing for danger-zone checks."""
-
-from __future__ import annotations
-
-from collections.abc import Mapping
-from dataclasses import dataclass
-
-OUTSIDE = "OUTSIDE"
-INSIDE = "INSIDE"
-
-ENTRY = "ENTRY"
-EXIT = "EXIT"
-LOST_INSIDE = "LOST_INSIDE"
+from industrial_safety.safety.zone_events import (
+    ENTRY,
+    EXIT,
+    INSIDE,
+    LOST_INSIDE,
+    OUTSIDE,
+    ZoneStateMachine,
+)
 
 
-@dataclass(frozen=True)
-class ZoneEvent:
-    """A zone event for one tracked worker."""
-
-    kind: str
-    track_id: int
-    frame: int
-    enter_frame: int | None
+def run(machine, values, start=1):
+    """Feed one observation per frame for track 1 and collect events."""
+    events = []
+    for offset, value in enumerate(values):
+        events += machine.update(start + offset, {1: value})
+    return events
 
 
-@dataclass
-class _TrackState:
-    state: str = OUTSIDE
-    in_count: int = 0
-    out_count: int = 0
-    last_seen: int = 0
-    enter_frame: int | None = None
+def kinds(events):
+    return [event.kind for event in events]
 
 
-class ZoneStateMachine:
-    """Turn per-frame inside/outside checks into ENTRY/EXIT events.
+def test_entry_after_enough_consecutive_frames():
+    machine = ZoneStateMachine(enter_frames=3, exit_frames=3)
+    events = run(machine, [True, True, True])
+    assert kinds(events) == [ENTRY]
+    assert machine.state(1) == INSIDE
 
-    A worker's confirmed state only changes after the new observation is
-    seen for several consecutive frames (debouncing), so a worker standing
-    near the zone border does not produce a burst of false events.
-    """
 
-    def __init__(
-        self,
-        enter_frames: int = 5,
-        exit_frames: int = 10,
-        lost_frames: int = 60,
-    ) -> None:
-        self.enter_frames = enter_frames
-        self.exit_frames = exit_frames
-        self.lost_frames = lost_frames
-        self._tracks: dict[int, _TrackState] = {}
+def test_no_entry_when_too_few_frames():
+    machine = ZoneStateMachine(enter_frames=3, exit_frames=3)
+    events = run(machine, [True, True])
+    assert events == []
+    assert machine.state(1) == OUTSIDE
 
-    def state(self, track_id: int) -> str:
-        """Return the confirmed state (INSIDE or OUTSIDE) of a track."""
-        track = self._tracks.get(track_id)
-        return track.state if track else OUTSIDE
 
-    def update(
-        self,
-        frame: int,
-        observations: Mapping[int, bool | None],
-    ) -> list[ZoneEvent]:
-        """Process one frame.
+def test_flicker_is_ignored():
+    machine = ZoneStateMachine(enter_frames=3, exit_frames=3)
+    events = run(machine, [True, False] * 10)
+    assert events == []
 
-        ``observations`` maps track id to True (inside), False (outside) or
-        None (unreliable, for example a box cut by the frame edge).
-        """
-        events: list[ZoneEvent] = []
-        for tid, raw_inside in observations.items():
-            track = self._tracks.setdefault(tid, _TrackState())
-            track.last_seen = frame
-            if raw_inside is None:
-                continue
-            event = self._step(tid, track, raw_inside, frame)
-            if event is not None:
-                events.append(event)
-        events.extend(self._drop_lost(frame))
-        return events
 
-    def _step(
-        self,
-        tid: int,
-        track: _TrackState,
-        raw_inside: bool,
-        frame: int,
-    ) -> ZoneEvent | None:
-        if raw_inside:
-            track.in_count += 1
-            track.out_count = 0
-            confirmed = track.in_count >= self.enter_frames
-            if track.state == OUTSIDE and confirmed:
-                track.state = INSIDE
-                track.enter_frame = frame
-                return ZoneEvent(ENTRY, tid, frame, frame)
-            return None
+def test_exit_after_enough_frames_outside():
+    machine = ZoneStateMachine(enter_frames=2, exit_frames=3)
+    events = run(machine, [True, True, False, False, False])
+    assert kinds(events) == [ENTRY, EXIT]
+    assert events[1].enter_frame == 2
 
-        track.out_count += 1
-        track.in_count = 0
-        confirmed = track.out_count >= self.exit_frames
-        if track.state == INSIDE and confirmed:
-            event = ZoneEvent(EXIT, tid, frame, track.enter_frame)
-            track.state = OUTSIDE
-            track.enter_frame = None
-            return event
-        return None
 
-    def _drop_lost(self, frame: int) -> list[ZoneEvent]:
-        events: list[ZoneEvent] = []
-        for tid in list(self._tracks):
-            track = self._tracks[tid]
-            if frame - track.last_seen <= self.lost_frames:
-                continue
-            if track.state == INSIDE:
-                events.append(
-                    ZoneEvent(LOST_INSIDE, tid, frame, track.enter_frame)
-                )
-            del self._tracks[tid]
-        return events
+def test_unreliable_frames_are_skipped():
+    machine = ZoneStateMachine(enter_frames=2, exit_frames=2)
+    events = run(machine, [True, None, None, None, True])
+    assert kinds(events) == [ENTRY]
+
+
+def test_lost_inside_when_track_disappears():
+    machine = ZoneStateMachine(enter_frames=1, exit_frames=3, lost_frames=5)
+    assert kinds(run(machine, [True])) == [ENTRY]
+    later = machine.update(10, {})
+    assert kinds(later) == [LOST_INSIDE]
+    assert machine.state(1) == OUTSIDE
+
+
+def test_lost_outside_is_silent():
+    machine = ZoneStateMachine(enter_frames=3, lost_frames=5)
+    run(machine, [False])
+    assert machine.update(20, {}) == []
