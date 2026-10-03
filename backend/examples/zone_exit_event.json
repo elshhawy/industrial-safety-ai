@@ -1,0 +1,24 @@
+{
+  "event_id": "evt_CAM01_20261002_133000_005",
+  "event_type": "zone_exit",
+  "occurred_at": "2026-10-02T13:30:00Z",
+  "camera_id": "CAM-01",
+  "track_id": "TRK-408",
+  "person_id": "EMP-301",
+  "zone_id": "ZONE-WAREHOUSE-A",
+  "confidence": 0.97,
+  "is_violation": false,
+  "violation_type": null,
+  "severity": null,
+  "description": "Worker exited warehouse loading area through authorized door A2",
+  "ppe": {
+    "helmet": true,
+    "vest": true,
+    "gloves": true,
+    "goggles": true
+  },
+  "frame_reference": "frames/CAM-01/evt_CAM01_20261002_133000_005.jpg",
+  "metadata": {
+    "duration_minutes": 30
+  }
+}
