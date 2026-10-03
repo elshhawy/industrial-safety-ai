@@ -112,8 +112,6 @@ class ZoneStateMachine:
             if frame - track.last_seen <= self.lost_frames:
                 continue
             if track.state == INSIDE:
-                events.append(
-                    ZoneEvent(LOST_INSIDE, tid, frame, track.enter_frame)
-                )
+                events.append(ZoneEvent(LOST_INSIDE, tid, frame, track.enter_frame))
             del self._tracks[tid]
         return events
