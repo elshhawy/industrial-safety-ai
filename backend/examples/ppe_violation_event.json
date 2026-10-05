@@ -1,0 +1,25 @@
+{
+  "event_id": "evt_CAM02_20261002_112030_002",
+  "event_type": "ppe_violation",
+  "occurred_at": "2026-10-02T11:20:30Z",
+  "camera_id": "CAM-02",
+  "track_id": "TRK-205",
+  "person_id": null,
+  "zone_id": "ZONE-CONSTRUCTION",
+  "confidence": 0.92,
+  "is_violation": true,
+  "violation_type": "missing_helmet",
+  "severity": "high",
+  "description": "Worker operating in construction zone without mandated safety helmet",
+  "ppe": {
+    "helmet": false,
+    "vest": true,
+    "gloves": true,
+    "goggles": false
+  },
+  "frame_reference": "frames/CAM-02/evt_CAM02_20261002_112030_002.jpg",
+  "metadata": {
+    "weather": "clear",
+    "required_ppe": ["helmet", "vest", "gloves"]
+  }
+}
