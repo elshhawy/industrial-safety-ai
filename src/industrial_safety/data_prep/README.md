@@ -48,8 +48,10 @@ Then train with `$DATA_ROOT/sh17_yolo/data.yaml`.
 
 ## Reference checksum
 
-SHA-256 over every produced file's relative path and size (printed at the end
-of each run). A different value means the data or the split changed.
+SHA-256 over the relative path and size of every produced file, except
+`data.yaml` and `CHECKSUM.txt` (they contain machine-specific paths). It is
+printed at the end of each run. A different value means the data or the split
+changed.
 
 ```
 TODO: paste the checksum printed by the first verified run

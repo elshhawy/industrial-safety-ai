@@ -187,9 +187,10 @@ def write_data_yaml(out_root: Path) -> None:
 
 def compute_checksum(out_root: Path) -> str:
     """SHA-256 over every produced file's relative path and size (stable, fast)."""
+    skip = {"CHECKSUM.txt", "data.yaml"}  # data.yaml holds a machine-specific path
     digest = hashlib.sha256()
     for path in sorted(out_root.rglob("*")):
-        if path.is_file() and path.name != "CHECKSUM.txt":
+        if path.is_file() and path.name not in skip:
             digest.update(path.relative_to(out_root).as_posix().encode())
             digest.update(str(path.stat().st_size).encode())
     return digest.hexdigest()
