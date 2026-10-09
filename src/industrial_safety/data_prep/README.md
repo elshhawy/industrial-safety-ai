@@ -11,7 +11,7 @@ live in Git.
 - Your **own** Kaggle API token: Kaggle -> Settings -> Create New Token, then save
   it as `~/.kaggle/kaggle.json` (or set `KAGGLE_USERNAME` / `KAGGLE_KEY`).
   Never commit `kaggle.json`.
-- About **28 GB** free in `DATA_ROOT` (raw download ~14 GB + prepared copy ~13.5 GB).
+- About **28 GB** free in `DATA_ROOT` (raw download ~14 GB + prepared copy ~13 GB).
 
 ## Run
 
@@ -54,7 +54,7 @@ printed at the end of each run. A different value means the data or the split
 changed.
 
 ```
-TODO: paste the checksum printed by the first verified run
+fef1f876bceef8a277c1c37db993e04756a25bf03454ebd300d7ccaf735eaa3b
 ```
 
 Background, statistics and known limitations (class imbalance, photo-vs-CCTV
