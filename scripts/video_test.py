@@ -1,68 +1,79 @@
-from ultralytics import YOLO
-import cv2
+"""Run the trained six-class PPE detector on a video file."""
 
-def main():
-    # Path to input video
-    video_path = "test.mp4"
+from __future__ import annotations
 
-    # Load trained model
-    model = YOLO("models/best.pt")
+import argparse
+import sys
+from pathlib import Path
 
-    # Open video file
-    cap = cv2.VideoCapture(video_path)
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
 
+from training.taxonomy import TARGET_CLASS_NAMES  # noqa: E402
+
+
+def parse_args() -> argparse.Namespace:
+    project_root = Path(__file__).resolve().parent.parent
+    default_ckpt = (
+        project_root / "runs" / "detect" / "yolov9e_sh17" / "weights" / "best.pt"
+    )
+    parser = argparse.ArgumentParser(
+        description="Visualize SH17 PPE detections on video."
+    )
+    parser.add_argument("--video", default="test.mp4")
+    parser.add_argument("--model", default=str(default_ckpt))
+    parser.add_argument("--output", default="output.mp4")
+    parser.add_argument("--conf", type=float, default=0.25)
+    parser.add_argument("--iou", type=float, default=0.5)
+    parser.add_argument("--imgsz", type=int, default=640)
+    return parser.parse_args()
+
+
+def main() -> None:
+    try:
+        import cv2
+        from ultralytics import YOLO
+    except ImportError as exc:
+        raise SystemExit(
+            "video_test.py requires opencv-python and ultralytics. "
+            "Install project dependencies and opencv-python."
+        ) from exc
+
+    args = parse_args()
+    model_path = Path(args.model)
+    if not model_path.is_file():
+        raise SystemExit(f"Checkpoint not found: {model_path}")
+
+    model = YOLO(str(model_path))
+    cap = cv2.VideoCapture(args.video)
     if not cap.isOpened():
-        print("Error: Cannot open video file")
+        print(f"Error: cannot open video file {args.video}")
         return
 
-    # Get video properties
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = int(cap.get(cv2.CAP_PROP_FPS)) or 25
-
-    # Initialize video writer for output
     out = cv2.VideoWriter(
-        "output.mp4",
-        cv2.VideoWriter_fourcc(*'mp4v'),
+        args.output,
+        cv2.VideoWriter_fourcc(*"mp4v"),
         fps,
-        (width, height)
+        (width, height),
     )
 
-    print("Running detection...")
-
-    frame_count = 0
-
+    print(f"Running detection for classes: {TARGET_CLASS_NAMES}")
     while True:
-        ret, frame = cap.read()
-        if not ret:
+        ok, frame = cap.read()
+        if not ok:
             break
-
-        frame_count += 1
-
-        
-        # Run inference on frame
-        results = model(frame, conf=0.25, iou=0.5, imgsz=640)[0]
-
-        violation_detected = False
-
-        for box in results.boxes:
-            cls_id = int(box.cls[0])
+        result = model(frame, conf=args.conf, iou=args.iou, imgsz=args.imgsz)[0]
+        for box in result.boxes:
+            class_id = int(box.cls[0])
             confidence = float(box.conf[0])
-            label = model.names[cls_id]
-
+            label = model.names[class_id]
             x1, y1, x2, y2 = map(int, box.xyxy[0])
-
             color = (0, 255, 0)
-
-            # Check for safety violations
-            if label in ["NO-Hardhat", "NO-Safety Vest"]:
-                color = (0, 0, 255)
-                violation_detected = True
-
-            # Draw bounding box
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-
-            # Draw label and confidence
             cv2.putText(
                 frame,
                 f"{label} {confidence:.2f}",
@@ -70,37 +81,17 @@ def main():
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.6,
                 color,
-                2
+                2,
             )
-
-        # Display alert text if violation detected
-        if violation_detected:
-            cv2.putText(
-                frame,
-                "SAFETY VIOLATION",
-                (50, 50),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1,
-                (0, 0, 255),
-                3
-            )
-
-        # Show frame
-        cv2.imshow("Safety Detection", frame)
-
-        # Save frame to output video
+        cv2.imshow("PPE detection", frame)
         out.write(frame)
-
-        # Exit on ESC key
         if cv2.waitKey(1) == 27:
             break
 
-    # Release resources
     cap.release()
     out.release()
     cv2.destroyAllWindows()
-
-    print("Finished. Output saved as output.mp4")
+    print(f"Finished. Output saved as {args.output}")
 
 
 if __name__ == "__main__":

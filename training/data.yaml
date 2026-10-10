@@ -1,13 +1,16 @@
-path: ../data
+# Template for the filtered six-class SH17 dataset.
+# Canonical generated file: data/filtered_sh17/data.yaml (created by prepare_dataset.py).
+# This committed copy matches the required taxonomy and default output layout.
 
-train: filtered/train/images
-val: filtered/valid/images
-test: filtered/test/images
+path: ../data/filtered_sh17
+train: images/train
+val: images/val
 
-nc: 4
-
+nc: 6
 names:
-  0: Hardhat
-  1: NO-Hardhat
-  2: Safety Vest
-  3: NO-Safety Vest
+  0: person
+  1: Face-covering
+  2: glasses
+  3: gloves
+  4: helmet
+  5: suit

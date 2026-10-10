@@ -30,7 +30,10 @@ models/*
 
 # Experiment outputs
 mlruns/
+mlartifacts/
 runs/
+wandb/
+*.cache
 
 # Videos (large; keep out of Git)
 *.mp4

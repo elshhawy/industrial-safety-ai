@@ -25,7 +25,9 @@ Inside ai-worker:
   detection -> tracking -> safety rules -> violation event
 ~~~
 
-DVC, MLflow and Docker are planned and not set up yet.
+Detection training uses the SH17 dataset only, remapped to six classes, with
+YOLOv9e and local MLflow tracking. See `training/README.md`. DVC and Docker
+are still planned.
 
 ## Repository structure
 
@@ -55,7 +57,7 @@ industrial-safety-ai/
 ├── tests/
 │   ├── unit/
 │   └── integration/
-├── training/                 # training scripts
+├── training/                 # SH17 prepare / YOLOv9e train / val / MLflow
 ├── .gitattributes
 ├── .gitignore
 ├── .pre-commit-config.yaml
@@ -85,6 +87,19 @@ pip install -e ".[dev]"
 pre-commit install
 pytest
 ~~~
+
+## Detection training (SH17)
+
+The detector is trained on SH17 only. The previous four-class Hardhat dataset
+is not part of this workflow.
+
+```powershell
+python training/prepare_dataset.py --source <extracted-sh17>
+python training/train.py
+python training/val.py
+```
+
+Full setup, CUDA notes, class mapping, and MLflow commands: `training/README.md`.
 
 ## Quality checks
 
