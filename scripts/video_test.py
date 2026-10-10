@@ -37,35 +37,37 @@ def main() -> None:
     except ImportError as exc:
         raise SystemExit(
             "video_test.py requires opencv-python and ultralytics. "
-            "Install project dependencies and opencv-python."
+            "Install project dependencies from pyproject.toml."
         ) from exc
 
     args = parse_args()
-    model_path = Path(args.model)
-    if not model_path.is_file():
-        raise SystemExit(f"Checkpoint not found: {model_path}")
+    model = YOLO(args.model)
 
-    model = YOLO(str(model_path))
+    expected_names = set(TARGET_CLASS_NAMES)
+    actual_names = set(model.names.values())
+    if not expected_names.issubset(actual_names):
+        print(
+            f"Warning: Model classes {actual_names} do not match target classes {expected_names}"
+        )
+
     cap = cv2.VideoCapture(args.video)
     if not cap.isOpened():
-        print(f"Error: cannot open video file {args.video}")
-        return
+        raise SystemExit(f"Could not open video source: {args.video}")
 
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    fps = int(cap.get(cv2.CAP_PROP_FPS)) or 25
-    out = cv2.VideoWriter(
-        args.output,
-        cv2.VideoWriter_fourcc(*"mp4v"),
-        fps,
-        (width, height),
-    )
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
 
-    print(f"Running detection for classes: {TARGET_CLASS_NAMES}")
-    while True:
-        ok, frame = cap.read()
-        if not ok:
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    out = cv2.VideoWriter(args.output, fourcc, fps, (width, height))
+
+    print(f"Processing video {args.video} -> {args.output}...")
+
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
             break
+
         result = model(frame, conf=args.conf, iou=args.iou, imgsz=args.imgsz)[0]
         for box in result.boxes:
             class_id = int(box.cls[0])

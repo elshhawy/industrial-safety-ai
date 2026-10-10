@@ -9,6 +9,7 @@ dependencies = [
     "mlflow>=2.16.0,<4",
     "opencv-python>=4.8.0",
     "numpy<2",
+    "supervision==0.30.6",
 ]
 
 [project.optional-dependencies]
@@ -17,6 +18,10 @@ dev = [
     "pytest-cov>=5",
     "ruff==0.16.9",
     "pre-commit>=3.7",
+]
+
+dvc = [
+    "dvc==3.67.1",
 ]
 
 [build-system]
