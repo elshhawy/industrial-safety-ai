@@ -1,8 +1,4 @@
 import logging
-import os
-from pathlib import Path
-
-from dotenv import dotenv_values
 
 from fastapi import FastAPI
 
@@ -10,11 +6,11 @@ from app.api.routes.alerts import router as alerts_router
 from app.api.routes.events import router as events_router
 from app.api.routes.health import router as health_router
 from app.api.routes.violations import router as violations_router
-log_level = os.environ.get("LOG_LEVEL") or dotenv_values(
-    Path(__file__).resolve().parents[1] / ".env"
-).get("LOG_LEVEL", "INFO")
+from app.core.config import get_settings
+
+settings = get_settings()
 logging.basicConfig(
-    level=getattr(logging, log_level.upper(), logging.INFO),
+    level=getattr(logging, settings.log_level.upper(), logging.INFO),
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 
@@ -32,3 +28,14 @@ app.include_router(health_router)
 app.include_router(events_router)
 app.include_router(violations_router)
 app.include_router(alerts_router)
+ 
+ 
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(
+        "app.main:app",
+        host=settings.app_host,
+        port=settings.app_port,
+        reload=settings.app_env == "development",
+    )

@@ -74,8 +74,10 @@ alembic upgrade head
 # 4. Optional: verify database readiness
 python -m scripts.seed
 
-# 5. Start the integration server on loopback
-uvicorn app.main:app --host 127.0.0.1 --port 8000
+# 5. Start the backend server (reads APP_HOST and APP_PORT from environment / .env, defaulting to 127.0.0.1:8000)
+python -m app.main
+# Or via uvicorn CLI directly:
+uvicorn app.main:app --host ${APP_HOST:-127.0.0.1} --port ${APP_PORT:-8000}
 ```
 
 ---

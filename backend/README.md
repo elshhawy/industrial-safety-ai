@@ -68,12 +68,23 @@ Compose database, the configured user and database are created automatically.
 
 ### 3.3 Start the backend server
 
+The server reads `APP_HOST` and `APP_PORT` from the environment or `.env` file (defaults: `127.0.0.1` and `8000`).
+
 ```powershell
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8010
+# Recommended: Run directly using settings from environment / .env
+.\.venv\Scripts\python.exe -m app.main
+
+# Or run using uvicorn CLI with environment variables:
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host ($env:APP_HOST ?? "127.0.0.1") --port ($env:APP_PORT ?? 8000)
 ```
 
-- Swagger UI: `http://127.0.0.1:8010/docs`
-- Health check: `http://127.0.0.1:8010/health`
+In Linux / Docker / bash environments:
+```bash
+uvicorn app.main:app --host ${APP_HOST:-127.0.0.1} --port ${APP_PORT:-8000}
+```
+
+- Swagger UI: `http://127.0.0.1:8000/docs`
+- Health check: `http://127.0.0.1:8000/health`
 - `GET /health` returns `200` when PostgreSQL is ready and `503` otherwise.
 
 ---
@@ -152,12 +163,20 @@ An upstream structured AI event is ingested as follows:
 
 ### 6.1 Run automated pytest suite
 
-```powershell
-# Unit and contract tests only (no database needed)
-.\.venv\Scripts\python.exe -m pytest -m "not integration" -v
+**CI Test Command (No Database Required):**
+To run all tests that do not require a live database in CI or local environments:
+```bash
+pytest -m "not integration"
+```
+*(Or from the repository root: `pytest backend/tests -m "not integration"`)*
 
+This command validates API schemas, contract boundaries, OpenAPI specifications, and mock health endpoints with zero external dependencies.
+
+**Full Integration Suite (Requires PostgreSQL):**
+```powershell
 # Create a dedicated disposable database once (never point tests at development data):
 docker compose exec db createdb -U safety_admin industrial_safety_test
+
 # Full suite including PostgreSQL integration; reads TEST_DATABASE_URL from .env
 .\.venv\Scripts\python.exe -m pytest -v
 ```
@@ -165,7 +184,7 @@ docker compose exec db createdb -U safety_admin industrial_safety_test
 ### 6.2 Run Live End-to-End Integration Smoke Test
 
 ```powershell
-.\.venv\Scripts\python.exe -m scripts.integration_smoke_test --url http://127.0.0.1:8010
+.\.venv\Scripts\python.exe -m scripts.integration_smoke_test --url http://127.0.0.1:8000
 ```
 
 The smoke test writes five sample events to the configured development database and
@@ -189,7 +208,23 @@ Located in `backend/examples/`:
 - `zone_entry_event.json`
 - `zone_exit_event.json`
 
-## 8. Handoff
+---
+
+## 8. Evidentiary Frames (`frame_reference`) & Privacy Architecture
+
+### Storage Ownership & Location
+- **Who stores the images?** The upstream AI edge / video inference pipeline (or dedicated frame snapshot service) is responsible for capturing evidentiary image snapshots when a violation occurs.
+- **Where are they stored?** The binary image is saved to a secure, access-restricted Object Storage bucket (e.g., S3, MinIO, or a private volume).
+- **What does the backend store?** The backend database **only stores the URI/path string** in `frame_reference` (e.g., `"frames/CAM-02/evt_002.jpg"`). The backend does not receive, process, or store raw image binary blobs.
+
+### Strict Worker Privacy Policy (Public Repository)
+> [!CAUTION]
+> **This repository is PUBLIC.** Under NO circumstances should any actual camera images, video recordings, or media containing identifiable faces or personal data of workers ever be committed to Git.
+> All evidentiary media and datasets must remain strictly inside private, authenticated storage outside the Git version control system.
+
+---
+
+## 9. Handoff
 
 The sender contract is [AI-to-Backend Integration Contract](../docs/integration/AI_TO_BACKEND_CONTRACT.md).
 Deployment and consumer details are in [Backend Handoff](../docs/integration/BACKEND_HANDOFF.md).

@@ -13,6 +13,7 @@ Tests the live running API end-to-end against all acceptance criteria:
 """
 import argparse
 import json
+import os
 from pathlib import Path
 import sys
 from urllib.error import HTTPError
@@ -45,8 +46,12 @@ def load_example(name: str) -> dict:
 
 
 def main() -> None:
+    default_host = os.environ.get("APP_HOST", "127.0.0.1")
+    default_port = os.environ.get("APP_PORT", "8000")
+    default_url = os.environ.get("BACKEND_URL", f"http://{default_host}:{default_port}")
+
     parser = argparse.ArgumentParser(description="Industrial Safety AI integration smoke test")
-    parser.add_argument("--url", default="http://127.0.0.1:8010", help="Backend base URL")
+    parser.add_argument("--url", default=default_url, help=f"Backend base URL (default: {default_url})")
     args = parser.parse_args()
 
     base_url = args.url.rstrip("/")

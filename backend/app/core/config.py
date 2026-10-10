@@ -9,7 +9,9 @@ class Settings(BaseSettings):
         env_file=Path(__file__).resolve().parents[2] / ".env", extra="ignore"
     )
     app_env: str = "development"
-    database_url: str
+    app_host: str = "127.0.0.1"
+    app_port: int = 8000
+    database_url: str = ""
     log_level: str = "INFO"
 
 
