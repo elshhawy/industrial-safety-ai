@@ -47,7 +47,8 @@ def main() -> None:
     actual_names = set(model.names.values())
     if not expected_names.issubset(actual_names):
         print(
-            f"Warning: Model classes {actual_names} do not match target classes {expected_names}"
+            f"Warning: Model classes {actual_names} "
+            f"do not match target classes {expected_names}"
         )
 
     cap = cv2.VideoCapture(args.video)
