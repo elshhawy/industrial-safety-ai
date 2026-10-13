@@ -1,0 +1,26 @@
+# Safety Helmet & Vest dataset - 17 classes (reference config for pretrained yolo9e model)
+# Update these paths when a dataset is added for fine-tuning
+path: ../data  # dataset root dir (relative to this yaml file)
+train: images/train  # train images (relative to 'path')
+val: images/val  # val images (relative to 'path')
+test: images/test  # test images (optional)
+
+# Classes
+names:
+  0:  person
+  1:  ear
+  2:  ear-mufs
+  3:  face
+  4:  face-guard
+  5:  face-mask
+  6:  foot
+  7:  tool
+  8:  glasses
+  9:  gloves
+  10: helmet
+  11: hands
+  12: head
+  13: medical-suit
+  14: shoes
+  15: safety-suit
+  16: safety-vest
