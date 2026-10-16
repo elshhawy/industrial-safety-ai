@@ -18,7 +18,10 @@ dev = [
 ]
 
 dvc = [
-    "dvc==3.67.1",
+    "dvc[gdrive]==3.67.1",
+    # PyDrive2 needs pyOpenSSL<=24.2.1, which needs cryptography<44
+    "cryptography<44",
+    "pyOpenSSL==24.2.1",
 ]
 
 [build-system]
