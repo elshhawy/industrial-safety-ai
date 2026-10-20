@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Industrial Safety AI — Backend Explained</title>
+  <style>
+    :root{font-family:Inter,"Segoe UI",Arial,sans-serif;color:#f2f7ff;background:#070d18}
+    *{box-sizing:border-box}
+    body{margin:0;overflow:hidden}
+    button{font:inherit}
+    #viewport{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(circle at 50% 45%,#15253b 0,#090f1b 55%,#050910 100%)}
+    #stage{position:relative;width:1600px;height:900px;flex:none;overflow:hidden;transform-origin:center center;background:radial-gradient(circle at 79% 28%,rgba(45,110,174,.2),transparent 34%),radial-gradient(circle at 10% 90%,rgba(35,184,163,.13),transparent 38%),#091321;box-shadow:0 40px 120px #0009;border:1px solid #38506a66}
+    #stage:before{content:"";position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(#b0d8ff07 1px,transparent 1px),linear-gradient(90deg,#b0d8ff07 1px,transparent 1px);background-size:38px 38px;mask-image:linear-gradient(#0007,transparent 83%)}
+    .aura{position:absolute;width:650px;height:650px;left:-220px;top:-260px;border-radius:50%;filter:blur(90px);background:#1d77a518;pointer-events:none}
+    .topbar{position:absolute;left:64px;right:64px;top:38px;display:flex;align-items:center;justify-content:space-between;color:#a9bfd1;font-size:17px;letter-spacing:.15em;text-transform:uppercase}
+    .brand{display:flex;align-items:center;gap:14px;font-weight:800;color:#eaf6ff}
+    .brand-mark{display:grid;place-items:center;width:35px;height:35px;border:1px solid #5fe1c19c;border-radius:10px;color:#75f2d2;background:#163b42;font-size:18px;letter-spacing:0}
+    .top-right{display:flex;align-items:center;gap:18px}
+    .live-dot{width:9px;height:9px;background:#69e6cb;border-radius:50%;box-shadow:0 0 18px #69e6cb}
+    .rule{position:absolute;top:94px;left:64px;right:64px;height:1px;background:linear-gradient(90deg,#54779185,#54779122)}
+    .heading{position:absolute;left:64px;top:122px;right:64px;display:grid;grid-template-columns:1fr 400px;gap:46px;align-items:end}
+    .eyebrow{color:#71dfcc;font-size:17px;letter-spacing:.18em;text-transform:uppercase;font-weight:800;margin-bottom:11px}
+    h1{font-size:51px;line-height:1.06;letter-spacing:-.035em;margin:0;font-weight:760;max-width:980px}
+    .subtitle{font-size:20px;color:#b9cada;line-height:1.35;margin:12px 0 0;max-width:930px}
+    .scene-meta{text-align:right;align-self:center}
+    .scene-num{font-size:74px;font-weight:800;letter-spacing:-.07em;line-height:.88;color:#e8f7ff}
+    .scene-total{font-size:22px;color:#7797ad;letter-spacing:.08em}
+    .scene-status{display:inline-flex;align-items:center;gap:9px;margin-top:16px;padding:9px 14px;border:1px solid #497b8c;border-radius:99px;background:#153243;color:#9eead8;font-size:14px;font-weight:750;letter-spacing:.06em;text-transform:uppercase}
+    #diagram{position:absolute;left:50px;top:298px;width:1500px;height:410px;border:1px solid #314b6380;border-radius:25px;background:linear-gradient(150deg,#13243ab3,#0e1c2fb8 62%,#0b1b2bb3);overflow:hidden}
+    #diagram:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 0,#61baff0b,transparent 58%);pointer-events:none}
+    #edges{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+    .edge{fill:none;stroke:#77c6e3;stroke-width:2.4;opacity:.64;stroke-dasharray:1200;stroke-dashoffset:1200;animation:draw 1.25s ease forwards}
+    .edge.alt{stroke:#e4b970}.edge.error{stroke:#f18e91}.edge.soft{stroke:#7897a9;stroke-dasharray:7 7;stroke-dashoffset:0;animation:none;opacity:.55}
+    .edge-label{font-size:14px;fill:#bbd7e6;paint-order:stroke;stroke:#112238;stroke-width:6px;stroke-linejoin:round;font-weight:700;letter-spacing:.035em}
+    .packet{fill:#a8f9ec;filter:drop-shadow(0 0 8px #64e0d9)}.packet.error{fill:#ffb2b7;filter:drop-shadow(0 0 8px #ff8e9b)}.packet.alt{fill:#ffe0a4;filter:drop-shadow(0 0 8px #edb15b)}
+    @keyframes draw{to{stroke-dashoffset:0}}
+    .node{position:absolute;padding:15px 17px;border:1px solid #3b5c76;border-radius:18px;background:linear-gradient(155deg,#1b344c,#10273c);box-shadow:0 14px 38px #0005,inset 0 1px #fff1;opacity:0;transform:translateY(18px);animation:rise .62s cubic-bezier(.2,.8,.2,1) forwards}
+    .node.accent{border-color:#45ccb5;background:linear-gradient(155deg,#174946,#123038)}
+    .node.gold{border-color:#bf9859;background:linear-gradient(155deg,#51412e,#27313b)}
+    .node.red{border-color:#cc727f;background:linear-gradient(155deg,#50303e,#2d2637)}
+    .node.muted{border-style:dashed;border-color:#5e7488;background:#1d2a39b5;opacity:.68}
+    @keyframes rise{to{opacity:1;transform:translateY(0)}}
+    .node-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+    .icon{display:grid;place-items:center;width:35px;height:35px;border-radius:11px;background:#66c9ed20;border:1px solid #7bd6f166;color:#95e5fc;font-size:12px;font-weight:900;letter-spacing:.03em}
+    .icon svg{width:21px;height:21px;stroke-linecap:round;stroke-linejoin:round}
+    .node.accent .icon{background:#63edc323;border-color:#64eac488;color:#9cf7db}.node.gold .icon{background:#e6b85e22;border-color:#e6b85e88;color:#ffe1a5}.node.red .icon{background:#fa9fa521;border-color:#fa9fa578;color:#ffc8c8}
+    .node-step{font-size:11px;font-weight:800;letter-spacing:.14em;color:#91aec2;text-transform:uppercase}
+    .node h2{margin:0 0 5px;font-size:21px;line-height:1.08;letter-spacing:-.02em}
+    .node p{margin:0;color:#bfd0dd;font-size:14px;line-height:1.28}
+    .node code{display:block;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#8edccf;font-size:11px;font-family:Consolas,"SFMono-Regular",monospace}
+    .node.compact code{display:none}
+    .node.red code{color:#ffb3b6}.node.gold code{color:#ffdc9c}
+    .micro-note{position:absolute;left:34px;bottom:18px;right:34px;color:#8da9bd;font-size:15px;letter-spacing:.01em}
+    .micro-note strong{color:#bdece3}
+    .explain{position:absolute;left:64px;right:64px;top:730px;height:96px;display:grid;grid-template-columns:1.8fr 1fr;gap:36px}
+    .explain > div{padding:1px 0 0 20px;border-left:3px solid #60d5bf}
+    .explain > div+div{border-left-color:#6e9aba}
+    .explain-label{font-size:12px;color:#81a8bb;letter-spacing:.17em;text-transform:uppercase;font-weight:800;margin-bottom:9px}
+    .explain-text{font-size:18px;color:#e1edf5;line-height:1.35}
+    .explain-code{font:14px/1.45 Consolas,"SFMono-Regular",monospace;color:#a4c8da;word-break:break-word}
+    .bottom{position:absolute;left:64px;right:64px;bottom:26px;height:44px;display:flex;align-items:center;gap:12px}
+    .control{height:42px;min-width:44px;padding:0 16px;border-radius:11px;border:1px solid #426580;background:#193149;color:#dcecf4;font-weight:750;cursor:pointer;transition:background .2s,transform .2s}
+    .control:hover{background:#254662;transform:translateY(-2px)}.control:focus-visible,.scene-pill:focus-visible{outline:3px solid #8ee9d5;outline-offset:3px}
+    .control.primary{background:#66ddc5;color:#062f37;border-color:#66ddc5}
+    .scene-tabs{display:flex;align-items:center;gap:7px;margin-left:15px;flex:1}
+    .scene-pill{border:1px solid #35536b;background:#10253a;color:#92aec2;border-radius:9px;padding:10px 12px;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap}
+    .scene-pill.active{border-color:#71dfc9;color:#e3fff6;background:#1a514e}
+    .hint{font-size:12px;color:#7798ad;white-space:nowrap;margin-left:5px}
+    .progress-track{position:absolute;left:0;right:0;bottom:0;height:5px;background:#172b3b}
+    #progress{height:100%;width:0;background:linear-gradient(90deg,#47b7df,#74edd0);box-shadow:0 0 14px #5ce0d0}
+    @media (prefers-reduced-motion:reduce){.node{animation:none;opacity:1;transform:none}.edge{animation:none;stroke-dashoffset:0}.packet{display:none}.control{transition:none}}
+  </style>
+</head>
+<body>
+  <div id="viewport">
+    <main id="stage" role="main" aria-label="Animated backend architecture presentation">
+      <div class="aura"></div>
+      <header class="topbar"><div class="brand"><span class="brand-mark">IS</span><span>INDUSTRIAL SAFETY AI <span style="color:#7798ad">/</span> BACKEND</span></div><div class="top-right"><span class="live-dot"></span><span>CODE-VERIFIED ARCHITECTURE</span></div></header>
+      <div class="rule"></div>
+      <div class="heading"><div><div id="eyebrow" class="eyebrow"></div><h1 id="title"></h1><p id="subtitle" class="subtitle"></p></div><div class="scene-meta"><span id="scene-num" class="scene-num"></span><span id="scene-total" class="scene-total"></span><br><span id="scene-status" class="scene-status"></span></div></div>
+      <div id="diagram"><svg id="edges" viewBox="0 0 1500 410" aria-hidden="true"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#8bcce2"></path></marker><marker id="arrow-alt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#e4b970"></path></marker><marker id="arrow-error" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#f18e91"></path></marker></defs><g id="edge-items"></g></svg><div id="nodes"></div><div id="micro-note" class="micro-note"></div></div>
+      <div class="explain"><div><div class="explain-label">THE TAKEAWAY</div><div id="takeaway" class="explain-text"></div></div><div><div class="explain-label">TRACE IT IN THE REPO</div><div id="source" class="explain-code"></div></div></div>
+      <nav class="bottom" aria-label="Presentation controls"><button id="prev" class="control" aria-label="Previous scene">←</button><button id="play" class="control primary" aria-label="Pause autoplay">Pause</button><button id="next" class="control" aria-label="Next scene">→</button><div id="scene-tabs" class="scene-tabs"></div><button id="full" class="control" aria-label="Toggle fullscreen">Fullscreen ⛶</button><span class="hint">← → scenes · Space pause · F fullscreen</span></nav>
+      <div class="progress-track"><div id="progress"></div></div>
+    </main>
+  </div>
+  <script>
+    const DURATION = 11500;
+    const scenes = [
+      {
+        tab:"System map", eyebrow:"01 / THE REAL SYSTEM", title:"An event enters. A record comes out.",
+        subtitle:"The implemented backend accepts structured safety events and makes them available to API clients.", status:"Implemented path",
+        nodes:[
+          {id:"sender",x:32,y:126,w:246,h:168,icon:"JSON",step:"INPUT",title:"Event sender",body:"Sample CLI exists. A live AI worker is not in this repo.",code:"scripts/send_sample_event.py",kind:"gold"},
+          {id:"api",x:332,y:126,w:246,h:168,icon:"API",step:"ENTRY",title:"FastAPI",body:"Receives HTTP and selects the route.",code:"app/main.py",kind:"accent"},
+          {id:"schema",x:632,y:126,w:246,h:168,icon:"VAL",step:"CONTRACT",title:"Pydantic",body:"Checks fields and turns timestamps into UTC.",code:"schemas/event.py"},
+          {id:"service",x:932,y:126,w:246,h:168,icon:"SVC",step:"ACTION",title:"Event service",body:"Builds records and commits one transaction.",code:"services/events.py"},
+          {id:"db",x:1232,y:126,w:246,h:168,icon:"DB",step:"STORAGE",title:"PostgreSQL",body:"Keeps events, violations and alert records.",code:"models/entities.py",kind:"accent"}
+        ],edges:[{from:"sender",to:"api",label:""},{from:"api",to:"schema",label:""},{from:"schema",to:"service",label:""},{from:"service",to:"db",label:""}],
+        note:"<strong>Boundary:</strong> the repository does not contain the running camera-to-AI pipeline or a frontend application.",
+        takeaway:"Think of the backend as the system's record keeper: it trusts a structured event from upstream, validates it, saves it, then returns a result.",
+        source:"backend/app/main.py · backend/app/api/routes/events.py · backend/app/services/events.py"
+      },
+      {
+        tab:"Ingest",eyebrow:"02 / USER ACTION",title:"Send a safety event to the API.",
+        subtitle:"A producer sends event details as JSON to POST /api/v1/events. No raw video is processed here.",status:"POST /api/v1/events",
+        nodes:[
+          {id:"json",x:50,y:115,w:265,h:190,icon:"01",step:"SENDER",title:"Event JSON",body:"Stable event_id, camera_id, event_type, UTC-aware time and is_violation.",code:"examples/ppe_violation_event.json",kind:"gold"},
+          {id:"route",x:410,y:115,w:265,h:190,icon:"02",step:"HTTP ROUTE",title:"FastAPI accepts it",body:"The POST route asks for a SafetyEventCreate payload and a DB session.",code:"api/routes/events.py",kind:"accent"},
+          {id:"check",x:770,y:115,w:265,h:190,icon:"03",step:"VALIDATION",title:"Pydantic checks it",body:"Rejects extra fields; enforces types, ranges and violation field rules.",code:"schemas/event.py"},
+          {id:"ready",x:1130,y:115,w:265,h:190,icon:"04",step:"HANDOFF",title:"Validated event",body:"The route passes a clean payload to ingest_event().",code:"services/events.py",kind:"accent"}
+        ],edges:[{from:"json",to:"route",label:"HTTP JSON"},{from:"route",to:"check",label:"parse"},{from:"check",to:"ready",label:"valid data"}],
+        note:"<strong>Validation detail:</strong> violation event types require is_violation=true plus violation_type and severity. Bad payloads return HTTP 422 before storage.",
+        takeaway:"The sender decides what happened. The backend checks the shape and consistency of that decision; it does not perform detection or safety inference.",
+        source:"backend/app/api/routes/events.py:create_event · backend/app/schemas/event.py:SafetyEventCreate"
+      },
+      {
+        tab:"Save",eyebrow:"03 / BUSINESS LOGIC",title:"One transaction. Two paths.",
+        subtitle:"Every accepted event is stored. Only a violation event creates linked violation and alert records.",status:"Atomic commit",
+        nodes:[
+          {id:"svc",x:40,y:120,w:234,h:165,icon:"SVC",step:"SERVICE",title:"ingest_event()",body:"Starts the database write and assigns a backend UUID.",code:"services/events.py",kind:"accent"},
+          {id:"event",x:345,y:120,w:234,h:165,icon:"EVT",step:"ALWAYS",title:"events",body:"Stores the incoming event and its metadata.",code:"events.event_id UNIQUE"},
+          {id:"normal",x:672,y:21,w:240,h:136,icon:"OK",step:"IF NORMAL",title:"No extra records",body:"person_detected, zone_entry or zone_exit.",code:"is_violation = false"},
+          {id:"violation",x:672,y:220,w:240,h:154,icon:"VIO",step:"IF VIOLATION",title:"violations",body:"Linked one-to-one to the event.",code:"status = open",kind:"gold"},
+          {id:"alert",x:994,y:220,w:240,h:154,icon:"ALT",step:"THEN",title:"alerts",body:"Stored alert linked to the violation.",code:"status = active",kind:"gold"},
+          {id:"response",x:1280,y:120,w:188,h:165,icon:"201",step:"COMMIT",title:"Accepted",body:"Returns event ID and created-record flags.",code:"HTTP 201",kind:"accent"}
+        ],edges:[{from:"svc",to:"event",label:"INSERT"},{from:"event",to:"normal",label:"normal",kind:"alt"},{from:"event",to:"violation",label:"violation",kind:"alt"},{from:"violation",to:"alert",label:"INSERT",kind:"alt"},{from:"normal",to:"response",label:"commit"},{from:"alert",to:"response",label:"",kind:"alt"}],
+        note:"<strong>Atomic means all-or-nothing:</strong> if a database write fails, the service rolls back. An alert is a saved row, not a phone notification.",
+        takeaway:"A normal event produces one row. A violation produces three linked rows—event, violation, alert—and the API confirms which were created.",
+        source:"backend/app/services/events.py:ingest_event · backend/app/models/entities.py · backend/alembic/versions/0001_initial.py"
+      },
+      {
+        tab:"Read",eyebrow:"04 / USER ACTION",title:"A client asks what happened.",
+        subtitle:"The current consumer is any HTTP client. A dashboard is planned, but no frontend app is implemented.",status:"GET read APIs",
+        nodes:[
+          {id:"client",x:30,y:126,w:250,h:170,icon:"GET",step:"CLIENT",title:"API consumer",body:"Requests lists or a record by backend UUID.",code:"GET /api/v1/events",kind:"gold"},
+          {id:"route",x:330,y:126,w:250,h:170,icon:"API",step:"ROUTES",title:"Read endpoints",body:"Events, violations and alerts each have list and detail GETs.",code:"api/routes/*.py",kind:"accent"},
+          {id:"query",x:630,y:126,w:250,h:170,icon:"SQL",step:"SERVICE",title:"Filter + paginate",body:"Applies filters, order, limit and offset.",code:"services/*.py"},
+          {id:"db",x:930,y:126,w:250,h:170,icon:"DB",step:"STORAGE",title:"PostgreSQL SELECT",body:"Reads the same three relational tables.",code:"events · violations · alerts",kind:"accent"},
+          {id:"json",x:1230,y:126,w:250,h:170,icon:"200",step:"RESPONSE",title:"JSON result",body:"Returns total, limit, offset, items—or one record.",code:"404 if ID is missing",kind:"gold"}
+        ],edges:[{from:"client",to:"route",label:"GET"},{from:"route",to:"query",label:"params"},{from:"query",to:"db",label:"SELECT"},{from:"db",to:"json",label:"rows"}],
+        note:"<strong>Implemented paths:</strong> GET /api/v1/events, /violations, /alerts and each /{id}. List responses include total, limit, offset and items.",
+        takeaway:"The backend already supports reading history and alert records. It does not push updates to a browser or phone.",
+        source:"backend/app/api/routes/{events,violations,alerts}.py · backend/app/services/{events,violations,alerts}.py"
+      },
+      {
+        tab:"Errors",eyebrow:"05 / SAFE FAILURE",title:"Bad input and retries have clear outcomes.",
+        subtitle:"Validation stops bad requests early; the database prevents duplicate event IDs during retries.",status:"422 · 409 · 500",
+        nodes:[
+          {id:"request",x:42,y:126,w:245,h:170,icon:"POST",step:"RETRY OR NEW",title:"Incoming event",body:"A sender may repeat the same event_id after a network retry.",code:"POST /api/v1/events",kind:"gold"},
+          {id:"validate",x:354,y:33,w:250,h:145,icon:"VAL",step:"BAD PAYLOAD",title:"Validation fails",body:"Missing or inconsistent fields never reach the service.",code:"SafetyEventCreate"},
+          {id:"unique",x:354,y:231,w:250,h:145,icon:"UNQ",step:"DATABASE",title:"Database checks",body:"PostgreSQL enforces unique event IDs and other constraints.",code:"events_event_id_key"},
+          {id:"r422",x:738,y:33,w:250,h:145,icon:"422",step:"RESPONSE",title:"Fix the JSON",body:"Standard FastAPI validation detail is returned.",code:"HTTP 422",kind:"red"},
+          {id:"r409",x:738,y:231,w:250,h:145,icon:"409",step:"ROLLBACK",title:"Already received",body:"No second event, violation or alert is created.",code:"HTTP 409",kind:"red"},
+          {id:"r500",x:1118,y:231,w:300,h:145,icon:"500",step:"OTHER DB ERROR",title:"Integrity failure",body:"The transaction rolls back; a generic error is returned.",code:"HTTP 500",kind:"red"}
+        ],edges:[{from:"request",to:"validate",label:"invalid",kind:"error"},{from:"validate",to:"r422",label:"reject",kind:"error"},{from:"request",to:"unique",label:"valid retry",kind:"alt"},{from:"unique",to:"r409",label:"same ID",kind:"error"},{from:"unique",to:"r500",label:"other DB error",kind:"error",path:"M 479 231 C 520 205, 780 205, 1030 205 S 1268 205, 1268 231",lx:1055,ly:198}],
+        note:"<strong>Retry rule:</strong> the sender must reuse an ID only for the same event. The backend checks ID uniqueness, not payload equality.",
+        takeaway:"An invalid event returns 422. A duplicate ID returns 409. Other database integrity failures return 500. Failed writes are rolled back.",
+        source:"backend/app/schemas/event.py · backend/app/services/events.py:ingest_event"
+      },
+      {
+        tab:"Health",eyebrow:"06 / READINESS",title:"Can the backend reach its database?",
+        subtitle:"A monitoring client calls GET /health. The route tests the database before reporting readiness.",status:"GET /health",
+        nodes:[
+          {id:"client",x:30,y:130,w:230,h:165,icon:"GET",step:"MONITOR",title:"Health request",body:"A client asks if the API and database are ready.",code:"GET /health",kind:"gold"},
+          {id:"route",x:325,y:130,w:230,h:165,icon:"HLT",step:"ROUTE",title:"health_check()",body:"Runs the readiness check and chooses the public response.",code:"api/routes/health.py",kind:"accent"},
+          {id:"session",x:620,y:130,w:230,h:165,icon:"SVC",step:"DEPENDENCY",title:"DB session",body:"get_session() supplies a SQLAlchemy session.",code:"db/session.py"},
+          {id:"db",x:915,y:130,w:230,h:165,icon:"DB",step:"DATABASE",title:"PostgreSQL",body:"The route executes a small SELECT 1 query.",code:"SELECT 1",kind:"accent"},
+          {id:"ready",x:1220,y:27,w:260,h:146,icon:"OK",step:"QUERY SUCCEEDS",title:"Ready",body:"status: ok · database: ok",code:"HTTP 200",kind:"gold"},
+          {id:"unavailable",x:1220,y:245,w:260,h:146,icon:"503",step:"QUERY FAILS",title:"Unavailable",body:"status: degraded · database: unavailable",code:"HTTP 503",kind:"red"}
+        ],edges:[{from:"client",to:"route",label:"GET"},{from:"route",to:"session",label:"session"},{from:"session",to:"db",label:"SELECT 1"},{from:"db",to:"ready",label:"success"},{from:"db",to:"unavailable",label:"exception",kind:"error"}],
+        note:"<strong>Operational detail:</strong> the connection uses DATABASE_URL. A failed SQL check is logged internally; the public 503 response omits connection details.",
+        takeaway:"Health means the backend can reach PostgreSQL now. This check does not claim that an AI worker or dashboard is running.",
+        source:"backend/app/api/routes/health.py · backend/app/db/session.py · backend/app/core/config.py"
+      },
+      {
+        tab:"Boundaries",eyebrow:"07 / OPERATIONS & SCOPE",title:"What runs today—and what does not.",
+        subtitle:"This is the implemented term-one backend, not the full proposed AI product architecture.",status:"Verified boundaries",
+        nodes:[
+          {id:"ready",x:30,y:45,w:250,h:155,icon:"DB",step:"IMPLEMENTED",title:"Local database",body:"Docker Compose starts PostgreSQL for development.",code:"postgres:17",kind:"accent"},
+          {id:"migration",x:330,y:45,w:250,h:155,icon:"DB",step:"IMPLEMENTED",title:"Migrations",body:"Alembic creates events, violations and alerts.",code:"0001_initial.py",kind:"accent"},
+          {id:"security",x:630,y:45,w:250,h:155,icon:"—",step:"NOT IMPLEMENTED",title:"Authentication",body:"No login, API key or authorization middleware.",code:"trusted integration only",kind:"muted"},
+          {id:"queue",x:930,y:45,w:250,h:155,icon:"—",step:"NOT IMPLEMENTED",title:"Async delivery",body:"No queue, worker or external API/service.",code:"alert = database row",kind:"muted"},
+          {id:"media",x:1230,y:45,w:250,h:155,icon:"—",step:"NOT IMPLEMENTED",title:"Media storage",body:"frame_reference is text; no image upload or object store.",code:"no S3 / MinIO",kind:"muted"},
+          {id:"ai",x:330,y:215,w:250,h:130,icon:"—",step:"PLACEHOLDER",title:"AI pipeline",body:"Detection, tracking and safety packages are empty.",code:"src/industrial_safety/",kind:"muted"},
+          {id:"frontend",x:930,y:215,w:250,h:130,icon:"—",step:"PLANNED",title:"Frontend",body:"Read APIs exist; no app or dashboard code is present.",code:"generic API client",kind:"muted"}
+        ],edges:[],
+        note:"<strong>Technology actually used:</strong> FastAPI, Pydantic, SQLAlchemy, psycopg, PostgreSQL and Alembic. Docker Compose defines only a local PostgreSQL service.",
+        takeaway:"The visualization separates working backend capabilities from proposal-stage AI, frontend, auth, queues and external services.",
+        source:"backend/app/* · backend/docker-compose.yml · src/industrial_safety/* · README.md"
+      }
+    ];
+
+    const $ = selector => document.querySelector(selector);
+    const viewport = $('#viewport'), stage = $('#stage'), nodesEl = $('#nodes'), edgesEl = $('#edge-items');
+    let index = 0, playing = !window.matchMedia('(prefers-reduced-motion: reduce)').matches, elapsed = 0, last = performance.now();
+
+    const glyphs = {
+      JSON:'<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/>',
+      API:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 10h10M7 14h6"/>',
+      VAL:'<path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5z"/><path d="m8.5 12 2.2 2.2 4.8-5"/>',
+      SVC:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M19 5l-2 2M7 17l-2 2"/>',
+      DB:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/>',
+      GET:'<path d="M4 7h16M4 12h12M4 17h8"/><path d="m17 10 3 2-3 2"/>',
+      SQL:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/>',
+      EVT:'<path d="M5 3h14v18H5zM9 8h6M9 12h6M9 16h4"/>',
+      VIO:'<path d="m12 3 9 16H3z"/><path d="M12 9v5m0 3h.01"/>',
+      ALT:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
+      OK:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+      UNQ:'<circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/>',
+      HLT:'<path d="M3 12h4l2-4 4 8 2-4h6"/><path d="M5 5a9 9 0 0 1 14 0M5 19a9 9 0 0 0 14 0"/>',
+      POST:'<path d="M3 12h17M14 6l6 6-6 6"/>',
+      '201':'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+      '409':'<path d="M4 12a8 8 0 1 0 2-5.3M4 4v5h5"/><path d="M12 8v5l3 2"/>',
+      '422':'<circle cx="12" cy="12" r="9"/><path d="m9 9 6 6m0-6-6 6"/>',
+      '500':'<path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5z"/><path d="m9 9 6 6m0-6-6 6"/>',
+      '—':'<circle cx="12" cy="12" r="9"/><path d="M6 18 18 6"/>'
+    };
+    function iconMarkup(key){return glyphs[key]?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">${glyphs[key]}</svg>`:escapeHTML(key);}
+
+    function fit(){
+      const scale = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
+      stage.style.transform = `scale(${scale})`;
+    }
+    window.addEventListener('resize', fit);
+    fit();
+
+    function anchor(a,b){
+      const ax=a.x+a.w/2, ay=a.y+a.h/2, bx=b.x+b.w/2, by=b.y+b.h/2;
+      if(Math.abs(bx-ax)>Math.abs(by-ay)*.78){
+        const x1=bx>ax?a.x+a.w:a.x, x2=bx>ax?b.x:b.x+b.w;
+        const y1=ay, y2=by, bend=Math.max(50,Math.abs(x2-x1)*.48);
+        return {d:`M ${x1} ${y1} C ${x1+(bx>ax?bend:-bend)} ${y1}, ${x2-(bx>ax?bend:-bend)} ${y2}, ${x2} ${y2}`,lx:(x1+x2)/2,ly:(y1+y2)/2-12};
+      }
+      const x1=ax,x2=bx,y1=by>ay?a.y+a.h:a.y,y2=by>ay?b.y:b.y+b.h;
+      return {d:`M ${x1} ${y1} C ${x1} ${(y1+y2)/2}, ${x2} ${(y1+y2)/2}, ${x2} ${y2}`,lx:(x1+x2)/2+18,ly:(y1+y2)/2};
+    }
+    function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+    function render(){
+      const s=scenes[index];
+      $('#eyebrow').textContent=s.eyebrow;$('#title').textContent=s.title;$('#subtitle').textContent=s.subtitle;
+      $('#scene-num').textContent=String(index+1).padStart(2,'0');$('#scene-total').textContent=` / ${String(scenes.length).padStart(2,'0')}`;
+      $('#scene-status').textContent=s.status;$('#takeaway').textContent=s.takeaway;$('#source').textContent=s.source;
+      $('#micro-note').innerHTML=s.note;
+      nodesEl.innerHTML=s.nodes.map((n,i)=>`<article class="node ${n.kind||''} ${n.h<180?'compact':''}" style="left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px;animation-delay:${.12+i*.1}s"><div class="node-top"><span class="icon">${iconMarkup(n.icon)}</span><span class="node-step">${escapeHTML(n.step)}</span></div><h2>${escapeHTML(n.title)}</h2><p>${escapeHTML(n.body)}</p><code>${escapeHTML(n.code)}</code></article>`).join('');
+      const byId=Object.fromEntries(s.nodes.map(n=>[n.id,n]));
+      edgesEl.innerHTML=s.edges.map((e,i)=>{
+        const {d,lx,ly}=e.path?{d:e.path,lx:e.lx,ly:e.ly}:anchor(byId[e.from],byId[e.to]);const kind=e.kind||'';
+        const marker=kind==='error'?'arrow-error':kind==='alt'?'arrow-alt':'arrow';
+        return `<path class="edge ${kind}" d="${d}" marker-end="url(#${marker})" style="animation-delay:${.25+i*.17}s"></path><text class="edge-label" x="${lx}" y="${ly}" text-anchor="middle">${escapeHTML(e.label)}</text>${kind==='soft'?'':`<circle class="packet ${kind}" r="4.5"><animateMotion dur="3.2s" begin="${i*.3}s" repeatCount="indefinite" path="${d}"></animateMotion></circle>`}`;
+      }).join('');
+      $('#scene-tabs').innerHTML=scenes.map((v,i)=>`<button class="scene-pill ${i===index?'active':''}" data-scene="${i}" aria-label="Scene ${i+1}: ${escapeHTML(v.tab)}" ${i===index?'aria-current="step"':''}>${String(i+1).padStart(2,'0')} ${escapeHTML(v.tab)}</button>`).join('');
+      document.querySelectorAll('[data-scene]').forEach(b=>b.addEventListener('click',()=>go(Number(b.dataset.scene))));
+      $('#play').textContent=playing?'Pause':'Play';$('#play').setAttribute('aria-label',playing?'Pause autoplay':'Start autoplay');
+      elapsed=0;$('#progress').style.width='0%';
+    }
+    function go(i){index=(i+scenes.length)%scenes.length;render();}
+    function toggle(){playing=!playing;$('#play').textContent=playing?'Pause':'Play';$('#play').setAttribute('aria-label',playing?'Pause autoplay':'Start autoplay');}
+    function tick(now){
+      if(playing){elapsed+=Math.min(100,now-last);if(elapsed>=DURATION)go(index+1);$('#progress').style.width=`${Math.min(100,elapsed/DURATION*100)}%`;}
+      last=now;requestAnimationFrame(tick);
+    }
+    $('#prev').addEventListener('click',()=>go(index-1));$('#next').addEventListener('click',()=>go(index+1));$('#play').addEventListener('click',toggle);
+    $('#full').addEventListener('click',()=>document.fullscreenElement?document.exitFullscreen():viewport.requestFullscreen());
+    document.addEventListener('keydown',e=>{if(['ArrowRight','ArrowLeft',' ','f','F'].includes(e.key))e.preventDefault();if(e.key==='ArrowRight')go(index+1);if(e.key==='ArrowLeft')go(index-1);if(e.key===' ')toggle();if(e.key.toLowerCase()==='f')$('#full').click();});
+    render();requestAnimationFrame(tick);
+  </script>
+</body>
+</html>

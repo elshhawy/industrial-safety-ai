@@ -16,6 +16,19 @@ dev = [
     "ruff==0.16.9",
     "pre-commit>=3.7",
 ]
+dvc = [
+    "dvc>=3.0",
+]
+backend = [
+    "fastapi>=0.115,<1",
+    "pydantic>=2.10,<3",
+    "pydantic-settings>=2.7,<3",
+    "SQLAlchemy>=2.0,<2.1",
+    "psycopg[binary]>=3.2,<4",
+    "alembic>=1.14,<2",
+    "uvicorn>=0.34,<1",
+    "httpx>=0.28,<1",
+]
 
 dvc = [
     "dvc[gdrive]==3.67.1",

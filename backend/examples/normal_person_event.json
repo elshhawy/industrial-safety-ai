@@ -1,0 +1,25 @@
+{
+  "event_id": "evt_CAM01_20261002_101500_001",
+  "event_type": "person_detected",
+  "occurred_at": "2026-10-02T10:15:00Z",
+  "camera_id": "CAM-01",
+  "track_id": "TRK-101",
+  "person_id": "EMP-504",
+  "zone_id": "ZONE-WALKWAY",
+  "confidence": 0.96,
+  "is_violation": false,
+  "violation_type": null,
+  "severity": null,
+  "description": "Authorized worker detected in standard walkway area with full safety compliance",
+  "ppe": {
+    "helmet": true,
+    "vest": true,
+    "gloves": true,
+    "goggles": true
+  },
+  "frame_reference": "frames/CAM-01/evt_CAM01_20261002_101500_001.jpg",
+  "metadata": {
+    "shift": "morning",
+    "facility_zone": "Sector-B"
+  }
+}

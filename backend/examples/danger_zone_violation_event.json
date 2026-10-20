@@ -1,0 +1,25 @@
+{
+  "event_id": "evt_CAM03_20261002_124510_003",
+  "event_type": "danger_zone_violation",
+  "occurred_at": "2026-10-02T12:45:10Z",
+  "camera_id": "CAM-03",
+  "track_id": "TRK-312",
+  "person_id": null,
+  "zone_id": "ZONE-ROBOTIC-ARM",
+  "confidence": 0.95,
+  "is_violation": true,
+  "violation_type": "danger_zone_unauthorized",
+  "severity": "critical",
+  "description": "Unauthorized personnel breached automated robotic arm perimeter during operation",
+  "ppe": {
+    "helmet": true,
+    "vest": true,
+    "gloves": false,
+    "goggles": false
+  },
+  "frame_reference": "frames/CAM-03/evt_CAM03_20261002_124510_003.jpg",
+  "metadata": {
+    "interlock_triggered": false,
+    "risk_level": "extreme"
+  }
+}
