@@ -30,6 +30,7 @@ models/*
 
 # Experiment outputs
 mlruns/
+mlflow.db
 runs/
 
 # Videos (large; keep out of Git)
