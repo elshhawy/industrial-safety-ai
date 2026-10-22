@@ -6,15 +6,21 @@ import mlflow and does not talk to any server, so it is safe to test in CI.
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
 from collections.abc import Mapping
-from pathlib import Path
+from datetime import date
+from pathlib import Path, PurePosixPath, PureWindowsPath
+from typing import Any
 
 REQUIRED_TAGS: tuple[str, ...] = ("author", "git_commit", "dataset_version")
 
 _MD5_LINE = re.compile(r"^\s*(?:-\s*)?md5:\s*([0-9a-fA-F]+(?:\.dir)?)\s*$")
+_UNSAFE_NAME_CHARS = re.compile(r"[^A-Za-z0-9._-]+")
+_WINDOWS_ABSOLUTE = re.compile(r"^(?:[A-Za-z]:[\\/]|\\\\)")
+REDACTED_PATH = "<redacted-path>"
 
 
 class MissingTagsError(ValueError):
@@ -22,7 +28,7 @@ class MissingTagsError(ValueError):
 
 
 def _run_git(args: list[str], cwd: Path | None = None) -> str | None:
-    """Run a git command and return stripped stdout, or None on any failure."""
+    """Run a git command. Return stripped stdout ("" if empty), None on failure."""
     try:
         result = subprocess.run(
             ["git", *args],
@@ -34,17 +40,17 @@ def _run_git(args: list[str], cwd: Path | None = None) -> str | None:
         )
     except (OSError, subprocess.SubprocessError):
         return None
-    return result.stdout.strip() or None
+    return result.stdout.strip()
 
 
 def get_git_commit(cwd: Path | None = None) -> str | None:
     """Return the full hash of HEAD, or None outside a git repository."""
-    return _run_git(["rev-parse", "HEAD"], cwd)
+    return _run_git(["rev-parse", "HEAD"], cwd) or None
 
 
 def get_git_author(cwd: Path | None = None) -> str | None:
     """Return the configured git user.name, or None if it is not set."""
-    return _run_git(["config", "user.name"], cwd)
+    return _run_git(["config", "user.name"], cwd) or None
 
 
 def read_dvc_md5(dvc_file: Path) -> str | None:
@@ -99,3 +105,72 @@ def validate_tags(tags: Mapping[str, str | None]) -> dict[str, str]:
             "Refusing to start run, missing mandatory tag(s): " + ", ".join(missing)
         )
     return {name: str(tags[name]).strip() for name in REQUIRED_TAGS}
+
+
+def is_git_dirty(cwd: Path | None = None) -> bool | None:
+    """Return True if tracked files have uncommitted changes.
+
+    Untracked files are ignored on purpose. Returns None if git is unavailable
+    or the folder is not a repository.
+    """
+    output = _run_git(["status", "--porcelain", "--untracked-files=no"], cwd)
+    if output is None:
+        return None
+    return bool(output)
+
+
+def build_optional_tags(cwd: Path | None = None) -> dict[str, str]:
+    """Return helpful but non-mandatory tags (currently only git_dirty)."""
+    dirty = is_git_dirty(cwd)
+    if dirty is None:
+        return {}
+    return {"git_dirty": "true" if dirty else "false"}
+
+
+def _slug(value: str) -> str:
+    return _UNSAFE_NAME_CHARS.sub("-", value.strip()).strip("-")
+
+
+def build_run_name(author: str, model: str, day: date | None = None) -> str:
+    """Return the run name `<author>_<model>_<yyyy-mm-dd>`."""
+    author_part = _slug(author)
+    model_part = _slug(model)
+    if not author_part or not model_part:
+        raise ValueError("author and model must contain letters or digits")
+    return f"{author_part}_{model_part}_{(day or date.today()).isoformat()}"
+
+
+def _is_absolute_path(text: str) -> bool:
+    if "://" in text:
+        return False
+    if _WINDOWS_ABSOLUTE.match(text):
+        return True
+    return (text.startswith("/") and len(text) > 1) or text.startswith("~/")
+
+
+def _file_name_only(text: str) -> str:
+    if _WINDOWS_ABSOLUTE.match(text):
+        name = PureWindowsPath(text).name
+    else:
+        name = PurePosixPath(text).name
+    return name or REDACTED_PATH
+
+
+def sanitize_params(params: Mapping[str, Any]) -> dict[str, str]:
+    """Return params as strings, keeping only the file name of absolute paths.
+
+    Only whole values that look like an absolute path are shortened. Paths nested
+    inside lists or dicts are not detected.
+    """
+    clean: dict[str, str] = {}
+    for key, value in params.items():
+        if value is None:
+            text = "null"
+        elif isinstance(value, str):
+            text = _file_name_only(value) if _is_absolute_path(value) else value
+        elif isinstance(value, (bool, int, float)):
+            text = str(value)
+        else:
+            text = json.dumps(value, default=str)
+        clean[str(key)] = text
+    return clean
