@@ -56,3 +56,16 @@ real use will be Dataset V1. Until then `dvc pull` has nothing to download.
   `git add .dvc/config` and commit again.
 - If a client secret is ever committed or pasted in a public place, create a new
   one in Google Cloud and stop using the old one.
+
+## Troubleshooting
+
+- `module 'lib' has no attribute 'GEN_EMAIL'`: the environment was installed
+  before the version pins. Reinstall with `pip install -e ".[dev,dvc]"`, then
+  check with `python -c "import pydrive2.fs"`.
+- `invalid_grant: Token has been expired or revoked`: the saved login expired.
+  Delete the saved token and run the command again, a browser login opens. On
+  Windows the file is `%LOCALAPPDATA%\pydrive2fs\Cache\<client id>\default.json`.
+  That file is a secret, never share it.
+- The browser does not open by itself: copy the link printed in the terminal
+  into a browser, and keep the terminal running until it prints
+  `Authentication successful`.
