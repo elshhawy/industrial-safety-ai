@@ -25,7 +25,9 @@ Inside ai-worker:
   detection -> tracking -> safety rules -> violation event
 ~~~
 
-DVC, MLflow and Docker are planned and not set up yet.
+DVC (Google Drive remote) and MLflow tracking (DagsHub) are set up. Each member
+still needs access, see the guides below. No dataset is tracked with DVC yet.
+Docker is planned.
 
 ## Repository structure
 
@@ -86,6 +88,19 @@ pre-commit install
 pytest
 ~~~
 
+Optional extras (install only what you need):
+
+- `dvc`: data versioning with the shared Google Drive remote.
+- `tracking`: MLflow and DagsHub client for experiment tracking.
+
+~~~bash
+pip install -e ".[dev,dvc,tracking]"
+~~~
+
+Run the install again after pulling a change to `pyproject.toml`, so the pinned
+versions are applied. The full path from a clone to a first tracked run is in
+[docs/quickstart.md](docs/quickstart.md).
+
 ## Quality checks
 
 `pre-commit` runs automatically on every commit. CI (GitHub Actions) runs
@@ -97,13 +112,19 @@ ruff format --check src tests
 pytest
 ~~~
 
+## Guides
+
+- [docs/quickstart.md](docs/quickstart.md): from a fresh clone to a first tracked run.
+- [docs/dvc-setup.md](docs/dvc-setup.md): connect to the shared DVC storage.
+- [docs/CONVENTIONS.md](docs/CONVENTIONS.md): rules for experiment tracking.
+
 ## Team conventions (proposed)
 
 - Work on a branch; do not commit directly to `main`.
 - Branch names: `feat/<area>-<desc>`, `fix/...`, `docs/...`, `chore/...`.
 - Commit messages start with `feat:`, `fix:`, `docs:`, `test:`, `ci:` or `chore:`.
 - Open a pull request; CI must pass and one teammate reviews it.
-- Do not commit data, model weights or secrets (`.env`).
+- Do not commit data, model weights or secrets (`.env`, `.dvc/config.local`, tokens).
 
 ## Team
 

@@ -48,3 +48,6 @@ runs/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Local tooling output
+repomix-output.xml
