@@ -25,8 +25,12 @@ pre-commit install
 pytest
 ~~~
 
-`pytest` should end with `1 passed`. Activate the virtual environment
+`pytest` should end with `passed` and no failures. Activate the virtual environment
 (`source .venv/Scripts/activate`) in every new terminal before working.
+
+For data versioning and experiment tracking, install the extras too and follow
+[docs/quickstart.md](docs/quickstart.md). Run the install again after pulling a
+change to `pyproject.toml`.
 
 ## Daily workflow
 
@@ -69,12 +73,19 @@ tell the branch was merged. Only use it after the PR is merged.)
   model weights, keys or `.env` files.
 - Any number you report (mAP, FPS, ...) must be measured, with the source stated.
 - Do not edit another person's folder directly. Open a pull request and ask the owner to review.
+- Dependencies live only in `pyproject.toml`. Pin exact versions when a package is fragile.
+- Never commit secrets: tokens, OAuth client secrets, `.env`, `.dvc/config.local`.
+  If one leaks, replace it with a new one.
+- Runs sent to the shared tracking repo go through `start_tracked_run`, following
+  [docs/CONVENTIONS.md](docs/CONVENTIONS.md). The tracking repo is public.
 
 ## When something fails
 
 - **pre-commit says Failed and files were modified:** run `git add` on those files and commit again.
 - **CI is red:** open the failed step in the Checks tab of the PR, then run
   `ruff check src tests`, `ruff format src tests` and `pytest` locally.
+- **DVC login, expired token or `GEN_EMAIL` error:** see the Troubleshooting section
+  in [docs/dvc-setup.md](docs/dvc-setup.md).
 - **Stuck:** ask in the team chat and paste the full command output.
 
 ## Folder owners (proposed)
@@ -86,5 +97,5 @@ tell the branch was merged. Only use it after the PR is merged.)
 | `src/industrial_safety/data_prep/`, `data/` | Rizk |
 | `backend/` | Malek |
 | `src/industrial_safety/pipeline/` | Ahmed Selim |
-| `.github/`, `docker/`, `pyproject.toml` | Abdelrahman |
+| `.github/`, `docker/`, `pyproject.toml`, `.dvc/`, `src/industrial_safety/mlops/`, `docs/quickstart.md`, `docs/dvc-setup.md`, `docs/CONVENTIONS.md` | Abdelrahman |
 | `src/industrial_safety/common/`, `configs/`, `tests/`, `docs/` | Shared (review by the team) |
